@@ -1,7 +1,8 @@
 import {defs, tiny} from './examples/common.js';
+import {Shape_From_File} from './examples/obj-file-demo.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene
 } = tiny;
 
 export class Bloons extends Scene {
@@ -15,8 +16,9 @@ export class Bloons extends Scene {
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
-            // TODO:  Fill in as many additional shape instances as needed in this key/value table.
-            //        (Requirement 1)
+            cube: new defs.Cube(),
+            balloon: new Shape_From_File("assets/balloon.obj"),
+            monkey: new Shape_From_File("assets/monkey.obj"),
         };
 
         // *** Materials
@@ -26,25 +28,27 @@ export class Bloons extends Scene {
             test2: new Material(new Gouraud_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
             ring: new Material(new Ring_Shader()),
-            // TODO:  Fill in as many additional material objects as needed in this key/value table.
-            //        (Requirement 4)
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 25, 50), vec3(0, 0, 0), vec3(0, 1, 0));
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => null);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-        this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
-        this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
-        this.new_line();
-        this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+
     }
+
+    draw_balloons(context, program_state, model_transform, balloon_color) {
+
+        model_transform = model_transform.times(Mat4.translation(5, 0, 0)) // every 3 units stack a box
+                                   
+        this.shapes.balloon.draw(context, program_state, model_transform, balloon_color);
+
+        return model_transform;
+    }
+
+
 
     display(context, program_state) {
         // display():  Called once per frame of animation.
@@ -58,20 +62,34 @@ export class Bloons extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
-        // TODO: Create Planets (Requirement 1)
-        // this.shapes.[XXX].draw([XXX]) // <--example
-
-        // TODO: Lighting (Requirement 2)
         const light_position = vec4(0, 5, 5, 1);
         // The parameters of the Light are: position, color, size
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
-        // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         const yellow = hex_color("#fac91a");
         let model_transform = Mat4.identity();
-
         this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
+
+
+        for (let i = 0; i < 8; i++) 
+            model_transform = this.draw_balloons(context, program_state, model_transform, this.materials.test);
+        // model_transform = model_transform.times(Mat4.translation(-40, -10, 0))
+        
+        // monkey
+        let model_transform_monkey = Mat4.identity();
+        model_transform_monkey = model_transform_monkey.times(Mat4.translation(-20, 0, 0))
+                                                        .times(Mat4.rotation(Math.PI/2, -1, 0, 0))
+                                                        .times(Mat4.rotation(Math.PI/2, 0, 0, 1))
+                                                        
+        this.shapes.monkey.draw(context, program_state, model_transform_monkey, this.materials.test);
+
+        // platform
+        let model_transform_platform = Mat4.identity();
+        model_transform_platform = model_transform_platform.times(Mat4.translation(-20, -2, 0))
+                                                            .times(Mat4.scale(3, 0.5, 2))
+        this.shapes.cube.draw(context, program_state, model_transform_platform, this.materials.test);
+     
     }
 }
 
