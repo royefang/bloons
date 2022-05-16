@@ -29,10 +29,25 @@ export class Bloons extends Scene {
             test2: new Material(new Gouraud_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
             ring: new Material(new Ring_Shader()),
+            balloon: new Material(new defs.Phong_Shader(),
+                {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#ffffff")}),
+            dart: new Material(new defs.Phong_Shader(),
+                {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#bfbfd0")}),
+            monkey: new Material(new defs.Phong_Shader(),
+                {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#bb946a")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 25, 50), vec3(0, 0, 0), vec3(0, 1, 0));
+
+        this.balloon_colors = [color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0)];
+
     }
+
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
@@ -41,11 +56,11 @@ export class Bloons extends Scene {
 
     }
 
-    draw_balloons(context, program_state, model_transform, balloon_color) {
+    draw_balloons(context, program_state, model_transform, balloon_number) {
 
         model_transform = model_transform.times(Mat4.translation(5, 0, 0)) // every 3 units stack a box
                                    
-        this.shapes.balloon.draw(context, program_state, model_transform, balloon_color);
+        this.shapes.balloon.draw(context, program_state, model_transform, this.materials.balloon.override({color: this.balloon_colors[balloon_number]}));
 
         return model_transform;
     }
@@ -71,24 +86,28 @@ export class Bloons extends Scene {
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         const yellow = hex_color("#fac91a");
         let model_transform = Mat4.identity();
-        this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
 
+        // balloons
+        let model_transform_balloon = model_transform.times(Mat4.scale(0.8, 0.8, 0.8));
 
-        for (let i = 0; i < 8; i++) 
-            model_transform = this.draw_balloons(context, program_state, model_transform, this.materials.test);
-        // model_transform = model_transform.times(Mat4.translation(-40, -10, 0))
+        for (let j = 0; j < 4; j++) {
+            for (let i = 0; i < 6; i++) {
+                model_transform_balloon = this.draw_balloons(context, program_state, model_transform_balloon, i);
+            }
+            model_transform_balloon = model_transform_balloon.times(Mat4.translation(-30, 7, 0));
+        }
         
         // monkey
         let model_transform_monkey = Mat4.identity();
-        model_transform_monkey = model_transform_monkey.times(Mat4.translation(-20, 0, 0))
+        model_transform_monkey = model_transform_monkey.times(Mat4.translation(-20, -3, 0))
                                                         .times(Mat4.rotation(Math.PI/2, -1, 0, 0))
                                                         .times(Mat4.rotation(Math.PI/2, 0, 0, 1))
                                                         
-        this.shapes.monkey.draw(context, program_state, model_transform_monkey, this.materials.test);
+        this.shapes.monkey.draw(context, program_state, model_transform_monkey, this.materials.monkey);
 
         // platform
         let model_transform_platform = Mat4.identity();
-        model_transform_platform = model_transform_platform.times(Mat4.translation(-20, -2, 0))
+        model_transform_platform = model_transform_platform.times(Mat4.translation(-20, -5, 0))
                                                             .times(Mat4.scale(3, 0.5, 2))
         this.shapes.cube.draw(context, program_state, model_transform_platform, this.materials.test);
 
@@ -96,7 +115,7 @@ export class Bloons extends Scene {
         let model_transform_dart = Mat4.identity();
         model_transform_dart = model_transform_dart
                                                     .times(Mat4.rotation(-Math.PI, -1, 0, 1))
-                                                    .times(Mat4.scale(2, 2, 2))
+                                                    .times(Mat4.scale(1, 1, 1))
                                                    // .times(Mat4.translation(0, -0.5, -t)) 
 
         if (!this.Reset) // If not reset, move dart
@@ -104,7 +123,7 @@ export class Bloons extends Scene {
             model_transform_dart = model_transform_dart.times(Mat4.translation(0, -0.5, -t)) // Moving dart here, set up function later to throw dart
         }
 
-        this.shapes.dart.draw(context, program_state, model_transform_dart, this.materials.test);
+        this.shapes.dart.draw(context, program_state, model_transform_dart, this.materials.dart);
      
     }
 }
@@ -180,6 +199,10 @@ class Gouraud_Shader extends Shader {
                 // The final normal vector in screen space.
                 N = normalize( mat3( model_transform ) * normal / squared_scale);
                 vertex_worldspace = ( model_transform * vec4( position, 1.0 ) ).xyz;
+                
+                // Gourand Shader needs to compute color calculation in vertex instead of fragment
+                vertex_col = vec4( shape_color.xyz * ambient, shape_color.w );
+                vertex_col.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
             } `;
     }
 
@@ -190,9 +213,11 @@ class Gouraud_Shader extends Shader {
         return this.shared_glsl_code() + `
             void main(){                                                           
                 // Compute an initial (ambient) color:
-                gl_FragColor = vec4( shape_color.xyz * ambient, shape_color.w );
+                // gl_FragColor = vec4( shape_color.xyz * ambient, shape_color.w );
                 // Compute the final color with contributions from lights:
-                gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
+                // gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
+                
+                gl_FragColor = vertex_col;
             } `;
     }
 
@@ -283,6 +308,11 @@ class Ring_Shader extends Shader {
         uniform mat4 projection_camera_model_transform;
         
         void main(){
+            // The vertex's final resting place (in NDCS):
+             gl_Position = projection_camera_model_transform * vec4( position, 1.0 );
+             point_position = model_transform * vec4(position, 1.0);
+             // center with object coordinates
+             center = model_transform * vec4(0.0, 0.0, 0.0, 1.0);
           
         }`;
     }
@@ -292,7 +322,10 @@ class Ring_Shader extends Shader {
         // TODO:  Complete the main function of the fragment shader (Extra Credit Part II).
         return this.shared_glsl_code() + `
         void main(){
-          
+            // distance between fragment and center
+            vec3 dis = vec3(point_position.xyz - center.xyz);
+            // set alpha of the fragment
+            gl_FragColor = vec4( vec3(0.69, 0.5, 0.25), cos(length(dis)*10.0));
         }`;
     }
 }
