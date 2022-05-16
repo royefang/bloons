@@ -37,6 +37,7 @@ export class Bloons extends Scene {
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => null);
+        this.key_triggered_button("Reset dart", ["Control", "1"], () => {this.Reset = !this.Reset;});
 
     }
 
@@ -93,8 +94,17 @@ export class Bloons extends Scene {
 
         // dart
         let model_transform_dart = Mat4.identity();
-        model_transform_dart = model_transform_dart.times(Mat4.scale(5, 5, 5))
-        this.shapes.dart.draw(context, program_state, model_transform_platform, this.materials.test);
+        model_transform_dart = model_transform_dart
+                                                    .times(Mat4.rotation(-Math.PI, -1, 0, 1))
+                                                    .times(Mat4.scale(2, 2, 2))
+                                                   // .times(Mat4.translation(0, -0.5, -t)) 
+
+        if (!this.Reset) // If not reset, move dart
+        {
+            model_transform_dart = model_transform_dart.times(Mat4.translation(0, -0.5, -t)) // Moving dart here, set up function later to throw dart
+        }
+
+        this.shapes.dart.draw(context, program_state, model_transform_dart, this.materials.test);
      
     }
 }
