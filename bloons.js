@@ -19,6 +19,7 @@ export class Bloons extends Scene {
             cube: new defs.Cube(),
             balloon: new Shape_From_File("assets/balloon.obj"),
             monkey: new Shape_From_File("assets/monkey.obj"),
+            dart: new Shape_From_File("assets/dart.obj")
         };
 
         // *** Materials
@@ -89,6 +90,11 @@ export class Bloons extends Scene {
         model_transform_platform = model_transform_platform.times(Mat4.translation(-20, -2, 0))
                                                             .times(Mat4.scale(3, 0.5, 2))
         this.shapes.cube.draw(context, program_state, model_transform_platform, this.materials.test);
+
+        // dart
+        let model_transform_dart = Mat4.identity();
+        model_transform_dart = model_transform_dart.times(Mat4.scale(5, 5, 5))
+        this.shapes.dart.draw(context, program_state, model_transform_platform, this.materials.test);
      
     }
 }
