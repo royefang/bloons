@@ -35,9 +35,11 @@ export class Bloons extends Scene {
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#bfbfd0")}),
             monkey: new Material(new defs.Phong_Shader(),
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#bb946a")}),
+            platform: new Material(new defs.Phong_Shader(),
+                {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#4f2921")}),
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 25, 50), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.balloon_colors = [color(Math.random(), Math.random(), Math.random(), 1.0),
             color(Math.random(), Math.random(), Math.random(), 1.0),
@@ -45,15 +47,21 @@ export class Bloons extends Scene {
             color(Math.random(), Math.random(), Math.random(), 1.0),
             color(Math.random(), Math.random(), Math.random(), 1.0),
             color(Math.random(), Math.random(), Math.random(), 1.0)];
+            
+        this.aim = false;
+        this.shoot = false;
+
+        this.model_transform_dart = Mat4.identity();
+        this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(-18,-2,0))
+                                                            .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
+                                                            .times(Mat4.scale(0.5, 0.5, 0.5));
 
     }
 
-
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => null);
-        this.key_triggered_button("Reset dart", ["Control", "1"], () => {this.Reset = !this.Reset;});
-
+        this.key_triggered_button("Aim", ["Control", "1"], () => {this.aim = !this.aim;});
+        this.key_triggered_button("Shoot", ["Control", "2"], () => {this.shoot = !this.shoot;});
     }
 
     draw_balloons(context, program_state, model_transform, balloon_number) {
@@ -65,15 +73,13 @@ export class Bloons extends Scene {
         return model_transform;
     }
 
-
-
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
-            program_state.set_camera(this.initial_camera_location);
+            program_state.set_camera(Mat4.translation(0, -5, -40));
         }
 
         program_state.projection_transform = Mat4.perspective(
@@ -84,11 +90,10 @@ export class Bloons extends Scene {
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        const yellow = hex_color("#fac91a");
         let model_transform = Mat4.identity();
 
         // balloons
-        let model_transform_balloon = model_transform.times(Mat4.scale(0.8, 0.8, 0.8));
+        let model_transform_balloon = model_transform.times(Mat4.scale(0.5, 0.5, 0.5));
 
         for (let j = 0; j < 4; j++) {
             for (let i = 0; i < 6; i++) {
@@ -109,21 +114,23 @@ export class Bloons extends Scene {
         let model_transform_platform = Mat4.identity();
         model_transform_platform = model_transform_platform.times(Mat4.translation(-20, -5, 0))
                                                             .times(Mat4.scale(3, 0.5, 2))
-        this.shapes.cube.draw(context, program_state, model_transform_platform, this.materials.test);
+        this.shapes.cube.draw(context, program_state, model_transform_platform, this.materials.platform);
 
-        // dart
-        let model_transform_dart = Mat4.identity();
-        model_transform_dart = model_transform_dart
-                                                    .times(Mat4.rotation(-Math.PI, -1, 0, 1))
-                                                    .times(Mat4.scale(1, 1, 1))
-                                                   // .times(Mat4.translation(0, -0.5, -t)) 
-
-        if (!this.Reset) // If not reset, move dart
-        {
-            model_transform_dart = model_transform_dart.times(Mat4.translation(0, -0.5, -t)) // Moving dart here, set up function later to throw dart
+        // dart is model_transformation is in the constructor
+        
+        // rotate to aim
+        if(this.aim){
+            this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(0, 0, 3))
+                                                    .times(Mat4.rotation(Math.PI*dt, 1, 0, 0))
+                                                    .times(Mat4.translation(0, 0, -3));
         }
 
-        this.shapes.dart.draw(context, program_state, model_transform_dart, this.materials.dart);
+        // shoot dart
+        if(this.shoot){
+            this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(0, 0, -t/4));
+        }
+
+        this.shapes.dart.draw(context, program_state, this.model_transform_dart, this.materials.dart);
      
     }
 }
