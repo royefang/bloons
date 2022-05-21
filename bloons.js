@@ -48,25 +48,41 @@ export class Bloons extends Scene {
             color(Math.random(), Math.random(), Math.random(), 1.0),
             color(Math.random(), Math.random(), Math.random(), 1.0)];
             
-        this.aim = false;
+        this.aim_up = false;
+        this.aim_down = false;
         this.shoot = false;
 
-        this.model_transform_dart = Mat4.identity();
-        this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(-18,-2,0))
+        this.model_transform_dart = this.model_transform_dart_default = Mat4.identity();
+
+        // added a default dart matrix, so we can easily reset the dart after modifying the dynamic matrix 
+        this.model_transform_dart_default 
+            = this.model_transform_dart_dynamic 
+            = this.model_transform_dart_default.times(Mat4.translation(-18,-2,0))
                                                             .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
                                                             .times(Mat4.scale(0.5, 0.5, 0.5));
+        // dart angle will go between 0 and 90 degrees
+        this.dart_angle = 0;
+        
+        // records time since "shoot" button was invoked
+        // resets the shot after 3s
+        this.elapsed_shot_time = 0;
+
+        // remaining shots if we want to implement limited shots later on
+        this.shots_left = 5;
 
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("Aim", ["Control", "1"], () => {this.aim = !this.aim;});
-        this.key_triggered_button("Shoot", ["Control", "2"], () => {this.shoot = !this.shoot;});
+        this.key_triggered_button("Aim Up", ["Control", "1"], () => {this.aim_up = true;}, '#6E6460', () => {this.aim_up = false;});
+        this.key_triggered_button("Aim Up", ["Control", "2"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
+        this.key_triggered_button("Shoot", ["Control", "3"], () => {this.shoot = true;}, '#6E6460');
+        
     }
 
     draw_balloons(context, program_state, model_transform, balloon_number) {
 
-        model_transform = model_transform.times(Mat4.translation(5, 0, 0)) // every 3 units stack a box
+        model_transform = model_transform.times(Mat4.translation(5, 0, 0)) 
                                    
         this.shapes.balloon.draw(context, program_state, model_transform, this.materials.balloon.override({color: this.balloon_colors[balloon_number]}));
 
@@ -89,7 +105,7 @@ export class Bloons extends Scene {
         // The parameters of the Light are: position, color, size
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
-        const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
+        const t = this.t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         let model_transform = Mat4.identity();
 
         // balloons
@@ -115,22 +131,47 @@ export class Bloons extends Scene {
         model_transform_platform = model_transform_platform.times(Mat4.translation(-20, -5, 0))
                                                             .times(Mat4.scale(3, 0.5, 2))
         this.shapes.cube.draw(context, program_state, model_transform_platform, this.materials.platform);
-
-        // dart is model_transformation is in the constructor
         
-        // rotate to aim
-        if(this.aim){
-            this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(0, 0, 3))
-                                                    .times(Mat4.rotation(Math.PI*dt, 1, 0, 0))
-                                                    .times(Mat4.translation(0, 0, -3));
+        // limit the dart to 90 degrees
+        if(this.aim_up && this.dart_angle < 90){
+
+            // 180 makes dart_angle consistent with unit circle angles
+            this.dart_angle += dt*180;
+            // console.log(this.dart_angle);
+            this.model_transform_dart_dynamic = this.model_transform_dart_dynamic.times(Mat4.translation(0, 0, 3))
+                                                                    .times(Mat4.rotation(Math.PI*dt, 1, 0, 0))
+                                                                    .times(Mat4.translation(0, 0, -3));
+        }
+        
+        // limit dart above horizontal
+        if(this.aim_down && this.dart_angle > 0){
+            
+            this.dart_angle -= dt*180;
+            // console.log(this.dart_angle);
+            this.model_transform_dart_dynamic = this.model_transform_dart_dynamic.times(Mat4.translation(0, 0, 3))
+                                                                    .times(Mat4.rotation(Math.PI*dt, -1, 0, 0))
+                                                                    .times(Mat4.translation(0, 0, -3));
         }
 
         // shoot dart
         if(this.shoot){
-            this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(0, 0, -t/4));
+
+            // record time since dart was shot
+            this.elapsed_shot_time += dt*100;
+            this.model_transform_dart_dynamic = this.model_transform_dart_dynamic.times(Mat4.translation(0, 0, -dt*50));
+            // console.log(this.shot_elapsed_time);
         }
 
-        this.shapes.dart.draw(context, program_state, this.model_transform_dart, this.materials.dart);
+        // reset dart after 3s
+        if(this.elapsed_shot_time > 300){
+            this.shoot = false;
+            this.elapsed_shot_time = 0;
+            this.shots_left -= 1;
+            // reset dart back to default location
+            this.model_transform_dart_dynamic = this.model_transform_dart_default;
+        }
+
+        this.shapes.dart.draw(context, program_state, this.model_transform_dart_dynamic, this.materials.dart);
      
     }
 }
