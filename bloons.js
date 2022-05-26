@@ -158,21 +158,59 @@ export class Bloons extends Scene {
 
             // record time since dart was shot
             this.elapsed_shot_time += dt*100;
-            this.model_transform_dart_dynamic = this.model_transform_dart_dynamic.times(Mat4.translation(0, 0, -dt*50));
-            // console.log(this.shot_elapsed_time);
+            // this.model_transform_dart_dynamic = this.model_transform_dart_dynamic.times(Mat4.translation(0, 1, -10));
+
+            // convert dart angle to radians
+            let radian_angle = (this.dart_angle * Math.PI/180);
+
+            // acceleration value: change if needed
+            let acceleration = 11;
+            let test_time = this.elapsed_shot_time / 100;
+
+            // initial velocity values: change if needed
+            let init_velocity_y = 50;
+            let init_velocity_x = 30;
+
+            // calculate positions
+                // delta y = v0 * sin(beta) * t - 1/2 (g) t^2
+            let y_pos = ((init_velocity_y * Math.sin(radian_angle) * test_time) - (0.5 * acceleration * test_time**2));
+                // delta x = v0 * t
+            let x_pos = -(init_velocity_x * test_time);
+
+            // statically (not dynamically)compute where position of dart should be 
+            this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(-18,-2,0))
+                                                                 .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
+                                                                 .times(Mat4.scale(0.5, 0.5, 0.5))
+                                                                 .times(Mat4.translation(0, y_pos, x_pos));
+            
+            this.shapes.dart.draw(context, program_state, this.model_transform_dart, this.materials.dart);
+
+            /* Console information:
+             console.log("Y pos: " + y_pos);
+             console.log("Radian value: " + Math.sin(radian_angle));
+             console.log("Time: " + test_time);
+             console.log("Init val: " + (init_velocity_y * Math.sin(radian_angle) * test_time));
+             console.log("Accel val: " + (0.5 * acceleration * test_time**2));
+            */
+            
+            // reset model
+            this.model_transform_dart = Mat4.identity();
         }
+
 
         // reset dart after 3s
         if(this.elapsed_shot_time > 300){
-            this.shoot = false;
-            this.elapsed_shot_time = 0;
-            this.shots_left -= 1;
-            // reset dart back to default location
-            this.model_transform_dart_dynamic = this.model_transform_dart_default;
-        }
+                this.shoot = false;
+                this.elapsed_shot_time = 0;
+                this.shots_left -= 1;
+                 this.dart_angle = 0;
+                // reset dart back to default location
+                this.model_transform_dart_dynamic = this.model_transform_dart_default;
+             }
 
-        this.shapes.dart.draw(context, program_state, this.model_transform_dart_dynamic, this.materials.dart);
-     
+        if (!this.shoot)
+                this.shapes.dart.draw(context, program_state, this.model_transform_dart_dynamic, this.materials.dart);
+        
     }
 }
 
@@ -197,7 +235,7 @@ class Gouraud_Shader extends Shader {
         uniform vec3 squared_scale, camera_center;
 
         // Specifier "varying" means a variable's final value will be passed from the vertex shader
-        // on to the next phase (fragment shader), then interpolated per-fragment, weighted by the
+            // on to the next phase (fragment shader), then interpolated per-fragment, weighted by the
         // pixel fragment's proximity to each of the 3 vertices (barycentric interpolation).
         varying vec3 N, vertex_worldspace;
         // ***** PHONG SHADING HAPPENS HERE: *****                                       
