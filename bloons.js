@@ -41,12 +41,19 @@ export class Bloons extends Scene {
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
-        this.balloon_colors = [color(Math.random(), Math.random(), Math.random(), 1.0),
-            color(Math.random(), Math.random(), Math.random(), 1.0),
-            color(Math.random(), Math.random(), Math.random(), 1.0),
-            color(Math.random(), Math.random(), Math.random(), 1.0),
-            color(Math.random(), Math.random(), Math.random(), 1.0),
-            color(Math.random(), Math.random(), Math.random(), 1.0)];
+        this.balloon_colors = [
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0)];
             
         this.aim_up = false;
         this.aim_down = false;
@@ -70,23 +77,113 @@ export class Bloons extends Scene {
         // remaining shots if we want to implement limited shots later on
         this.shots_left = 5;
 
+        // balloons that have been popped
+        this.popped_balloons = [];
+        this.balloon_count = 0;
+        this.popped_balloons[0] = -1;
+
+    }
+
+    // randomize balloon colors after each game ends
+    set_balloon_colors() {
+        this.balloon_colors = [
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0),
+            color(Math.random(), Math.random(), Math.random(), 1.0), color(Math.random(), Math.random(), Math.random(), 1.0)];
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("Aim Up", ["Control", "1"], () => {this.aim_up = true;}, '#6E6460', () => {this.aim_up = false;});
-        this.key_triggered_button("Aim Up", ["Control", "2"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
+        this.key_triggered_button("Aim Down", ["Control", "2"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
         this.key_triggered_button("Shoot", ["Control", "3"], () => {this.shoot = true;}, '#6E6460');
         
     }
 
-    draw_balloons(context, program_state, model_transform, balloon_number) {
+    draw_balloons(context, program_state, model_transform, balloon_number, balloon_row) {
 
-        model_transform = model_transform.times(Mat4.translation(5, 0, 0)) 
-                                   
-        this.shapes.balloon.draw(context, program_state, model_transform, this.materials.balloon.override({color: this.balloon_colors[balloon_number]}));
+
+        model_transform = model_transform.times(Mat4.translation(5, 0, 0))
+        let balloon_num = balloon_number + (balloon_row*6);
+        for (let i = 0; i < this.balloon_count; i++) {
+            if (this.popped_balloons[i] === balloon_num) {
+                return model_transform;
+            }
+        }
+        this.shapes.balloon.draw(context, program_state, model_transform, this.materials.balloon.override({color: this.balloon_colors[balloon_num]}));
 
         return model_transform;
+    }
+
+    find_popped_balloons(x_pos, y_pos) {
+        let horiz_balloon = -1;
+        if (x_pos < -36 && x_pos >= -41) { horiz_balloon = 1;}
+        else if (x_pos < -41 && x_pos >= -46) { horiz_balloon = 2;}
+        else if (x_pos < -46 && x_pos >= -51) { horiz_balloon = 3;}
+        else if (x_pos < -51 && x_pos >= -56) { horiz_balloon = 4;}
+        else if (x_pos < -56 && x_pos >= -61) { horiz_balloon = 5;}
+        else if (x_pos < -61 && x_pos >= -66) { horiz_balloon = 6;}
+
+        let pop_ball;
+        // first row
+        if (y_pos < 10 && y_pos > 4) {
+            switch (horiz_balloon) {
+                case 1: pop_ball = 0; break;
+                case 2: pop_ball = 1; break;
+                case 3: pop_ball = 2; break;
+                case 4: pop_ball = 3; break;
+                case 5: pop_ball = 4; break;
+                case 6: pop_ball = 5; break;
+                default: pop_ball = -1;
+            }
+        }
+        // second row
+        else if (y_pos < 17 && y_pos > 11) {
+            switch (horiz_balloon) {
+                case 1: pop_ball = 6; break;
+                case 2: pop_ball = 7; break;
+                case 3: pop_ball = 8; break;
+                case 4: pop_ball = 9; break;
+                case 5: pop_ball = 10; break;
+                case 6: pop_ball = 11; break;
+                default: pop_ball = -1;
+            }
+        }
+        // third row
+        else if (y_pos < 24 && y_pos > 18) {
+            switch (horiz_balloon) {
+                case 1: pop_ball = 12; break;
+                case 2: pop_ball = 13; break;
+                case 3: pop_ball = 14; break;
+                case 4: pop_ball = 15; break;
+                case 5: pop_ball = 16; break;
+                case 6: pop_ball = 17; break;
+                default: pop_ball = -1;
+            }
+        }
+        // fourth row
+        else if (y_pos < 31 && y_pos > 25) {
+            switch (horiz_balloon) {
+                case 1: pop_ball = 18; break;
+                case 2: pop_ball = 19; break;
+                case 3: pop_ball = 20; break;
+                case 4: pop_ball = 21; break;
+                case 5: pop_ball = 22; break;
+                case 6: pop_ball = 23; break;
+                default: pop_ball = -1;
+            }
+        }
+
+        return pop_ball;
     }
 
     display(context, program_state) {
@@ -110,10 +207,11 @@ export class Bloons extends Scene {
 
         // balloons
         let model_transform_balloon = model_transform.times(Mat4.scale(0.5, 0.5, 0.5));
+        // this.shapes.balloon.draw(context, program_state, model_transform_balloon, this.materials.balloon)
 
         for (let j = 0; j < 4; j++) {
             for (let i = 0; i < 6; i++) {
-                model_transform_balloon = this.draw_balloons(context, program_state, model_transform_balloon, i);
+                model_transform_balloon = this.draw_balloons(context, program_state, model_transform_balloon, i, j);
             }
             model_transform_balloon = model_transform_balloon.times(Mat4.translation(-30, 7, 0));
         }
@@ -174,16 +272,38 @@ export class Bloons extends Scene {
             // calculate positions
                 // delta y = v0 * sin(beta) * t - 1/2 (g) t^2
             let y_pos = ((init_velocity_y * Math.sin(radian_angle) * test_time) - (0.5 * acceleration * test_time**2));
+            // console.log(y_pos);
                 // delta x = v0 * t
             let x_pos = -(init_velocity_x * test_time);
+            // console.log(x_pos);
 
-            // statically (not dynamically)compute where position of dart should be 
+            // statically (not dynamically)compute where position of dart should be
             this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(-18,-2,0))
                                                                  .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
                                                                  .times(Mat4.scale(0.5, 0.5, 0.5))
                                                                  .times(Mat4.translation(0, y_pos, x_pos));
+
             
             this.shapes.dart.draw(context, program_state, this.model_transform_dart, this.materials.dart);
+
+            // add balloons that are popped
+            let pop_balloon = this.find_popped_balloons(x_pos, y_pos);
+
+            // document popped balloons
+            if (pop_balloon !== -1) {
+                let balloon_counted = false;
+                for (let i = 0; i < this.balloon_count; i++) {
+                    if (this.popped_balloons[i] === pop_balloon) {
+                        balloon_counted = true;
+                    }
+                }
+                if (!balloon_counted) {
+                    this.popped_balloons[this.balloon_count] = pop_balloon;
+                    this.balloon_count++;
+                    // console.log("count " + this.balloon_count);
+                    // console.log("Popped: " + this.popped_balloons[this.balloon_count]);
+                }
+            }
 
             /* Console information:
              console.log("Y pos: " + y_pos);
