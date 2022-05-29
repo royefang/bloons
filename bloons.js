@@ -253,7 +253,7 @@ export class Bloons extends Scene {
 
         // shoot dart
         if(this.shoot){
-
+            
             // record time since dart was shot
             this.elapsed_shot_time += dt*100;
             // this.model_transform_dart_dynamic = this.model_transform_dart_dynamic.times(Mat4.translation(0, 1, -10));
@@ -279,11 +279,17 @@ export class Bloons extends Scene {
 
             // statically (not dynamically)compute where position of dart should be
             this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(-18,-2,0))
-                                                                 .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
-                                                                 .times(Mat4.scale(0.5, 0.5, 0.5))
-                                                                 .times(Mat4.translation(0, y_pos, x_pos));
+                                                                .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
+                                                                .times(Mat4.scale(0.5, 0.5, 0.5))
+                                                                .times(Mat4.translation(0, y_pos, x_pos));
+                        
+            // modify dart angle as it travels and gradually decrease as time goes on
+            radian_angle -= (this.elapsed_shot_time^2)/250;
+            this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(0, 0, 3))
+                                                                .times(Mat4.rotation(radian_angle, 50, 0, 0))
+                                                                .times(Mat4.translation(0, 0, -3))
 
-            
+
             this.shapes.dart.draw(context, program_state, this.model_transform_dart, this.materials.dart);
 
             // add balloons that are popped
@@ -320,16 +326,16 @@ export class Bloons extends Scene {
 
         // reset dart after 3s
         if(this.elapsed_shot_time > 300){
-                this.shoot = false;
-                this.elapsed_shot_time = 0;
-                this.shots_left -= 1;
-                 this.dart_angle = 0;
-                // reset dart back to default location
-                this.model_transform_dart_dynamic = this.model_transform_dart_default;
-             }
+            this.shoot = false;
+            this.elapsed_shot_time = 0;
+            this.shots_left -= 1;
+            this.dart_angle = 0;
+            // reset dart back to default location
+            this.model_transform_dart_dynamic = this.model_transform_dart_default;
+        }
 
-        if (!this.shoot)
-                this.shapes.dart.draw(context, program_state, this.model_transform_dart_dynamic, this.materials.dart);
+        if(!this.shoot)
+            this.shapes.dart.draw(context, program_state, this.model_transform_dart_dynamic, this.materials.dart);
         
     }
 }
