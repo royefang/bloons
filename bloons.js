@@ -32,14 +32,14 @@ export class Bloons extends Scene {
             balloon: new Material(new defs.Phong_Shader(),
                 {ambient: 0.8, diffusivity: 0.5, specularity: 0.1, color: hex_color("#000000")}),
             dart: new Material(new defs.Phong_Shader(),
-                {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#bfbfd0")}),
+                {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#444444")}),
             monkey: new Material(new defs.Phong_Shader(),
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#bb946a")}),
             platform: new Material(new defs.Phong_Shader(),
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#4f2921")}),
 
             cloud: new Material(new Texture_Scroll_X(), {
-                color: hex_color("#ffffff"),
+                color: hex_color("#aaaaaa"),
                 ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
                 texture: new Texture("assets/cloud256.PNG", "NEAREST")
                 }),
@@ -85,6 +85,8 @@ export class Bloons extends Scene {
     // }
 
     make_control_panel() {
+
+        // this.control_panel
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("Aim Up", ["Control", "1"], () => {this.aim_up = true;}, '#6E6460', () => {this.aim_up = false;});
         this.key_triggered_button("Aim Down", ["Control", "2"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
@@ -189,7 +191,7 @@ export class Bloons extends Scene {
         let model_transform = Mat4.identity();
 
         // background
-        let model_transform_cloud = model_transform.times(Mat4.scale(50, 50, 50));
+        let model_transform_cloud = model_transform.times(Mat4.scale(150, 150, 75));
         this.shapes.cube.draw(context, program_state, model_transform_cloud, this.materials.cloud)
 
         // balloons
@@ -341,7 +343,7 @@ class Texture_Scroll_X extends Textured_Phong {
                 vec2 scroll_tex_coord = f_tex_coord;
 
                 // mod to keep value between 0 and 2, prevents coord value from growing excessively
-                scroll_tex_coord.x -= 2.0 * mod(animation_time, 10.0);
+                scroll_tex_coord.x -= mod(animation_time, 60.0)/20.0;
                 
                 vec4 tex_color = texture2D( texture, scroll_tex_coord);
                 if( tex_color.w < .01 ) discard;
