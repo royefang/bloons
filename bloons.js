@@ -191,7 +191,7 @@ export class Bloons extends Scene {
         let model_transform = Mat4.identity();
 
         // background
-        let model_transform_cloud = model_transform.times(Mat4.scale(150, 150, 75));
+        let model_transform_cloud = model_transform.times(Mat4.scale(100, 100, 75));
         this.shapes.cube.draw(context, program_state, model_transform_cloud, this.materials.cloud)
 
         // balloons
