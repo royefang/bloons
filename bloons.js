@@ -69,7 +69,7 @@ export class Bloons extends Scene {
         this.elapsed_shot_time = 0;
 
         // remaining shots if we want to implement limited shots later on
-        this.shots_left = 5;
+        this.shots_left = 1;
 
         // balloons that have been popped
         this.popped_balloons = [];
@@ -85,6 +85,40 @@ export class Bloons extends Scene {
     }
 
     make_control_panel() {
+        // this.control_panel.innerHTML += "Darts left: ";
+        // The next line adds a live text readout of a data member of our Scene.
+        this.live_string(box => {
+            
+            if(this.shots_left > 0)
+                box.textContent = "Darts left: " + this.shots_left;
+            
+            // use all darts
+            else{
+
+                // popped all balloons (hardcoded to num of balloons)
+                if(this.balloon_count == 32){
+                    box.textContent = "I guess you are not a terrible person after all. Try again?"
+                }
+                
+                // did not pop all
+                else{
+                    box.textContent = "Wow you are terrible at this game. I hate you."
+                    // this.key_triggered_button("Reset", ["Control", "4"], () => {this.reset_game();}, '#6E6460');
+                    // return;
+
+                    // const resetButton = document.createElement("button");
+                    // resetButton.innerHTML = 'hi'
+                    // resetButton.addEventListener('click', () => {
+                    //     this.reset_game();
+                    // });
+                    // document.body.appendChild(resetButton);
+
+                }
+            }
+        });
+
+        this.new_line();
+        this.new_line();
 
         // this.control_panel
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
@@ -228,7 +262,7 @@ export class Bloons extends Scene {
         this.shapes.cube.draw(context, program_state, model_transform_platform, this.materials.platform);
         
         // limit the dart to 90 degrees
-        if(this.aim_up && this.dart_angle < 90){
+        if(this.aim_up && this.dart_angle < 90 && !this.shoot){
 
             // 180 makes dart_angle consistent with unit circle angles
             this.dart_angle += dt*180;
@@ -239,7 +273,7 @@ export class Bloons extends Scene {
         }
         
         // limit dart above horizontal
-        if(this.aim_down && this.dart_angle > 0){
+        if(this.aim_down && this.dart_angle > 0 && !this.shoot){
             
             this.dart_angle -= dt*180;
             // console.log(this.dart_angle);
@@ -335,9 +369,9 @@ export class Bloons extends Scene {
         }
 
         // ran out of shots, reset the game
-        if (this.shots_left === 0) {
-            this.reset_game();
-        }
+        // if (this.shots_left === 0) {
+        //     this.reset_game();
+        // }
 
         if(!this.shoot)
             this.shapes.dart.draw(context, program_state, this.model_transform_dart_dynamic, this.materials.dart);
