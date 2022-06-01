@@ -75,57 +75,48 @@ export class Bloons extends Scene {
         this.popped_balloons = [];
         this.balloon_count = 0;
         this.popped_balloons[0] = -1;
-
+        
     }
 
     // randomize balloon colors after each game ends
     set_balloon_colors() {
-        
         this.balloon_colors = [...Array(24)].map((_, i) => (color(Math.random(), Math.random(), Math.random(), 1.0)));
     }
 
     make_control_panel() {
-        // this.control_panel.innerHTML += "Darts left: ";
-        // The next line adds a live text readout of a data member of our Scene.
-        this.live_string(box => {
-            
-            if(this.shots_left > 0)
-                box.textContent = "Darts left: " + this.shots_left;
-            
-            // use all darts
-            else{
-
-                // popped all balloons (hardcoded to num of balloons)
-                if(this.balloon_count == 32){
-                    box.textContent = "I guess you are not a terrible person after all. Try again?"
-                }
-                
-                // did not pop all
-                else{
-                    box.textContent = "Wow you are terrible at this game. I hate you."
-                    // this.key_triggered_button("Reset", ["Control", "4"], () => {this.reset_game();}, '#6E6460');
-                    // return;
-
-                    // const resetButton = document.createElement("button");
-                    // resetButton.innerHTML = 'hi'
-                    // resetButton.addEventListener('click', () => {
-                    //     this.reset_game();
-                    // });
-                    // document.body.appendChild(resetButton);
-
-                }
-            }
-        });
-
-        this.new_line();
-        this.new_line();
-
-        // this.control_panel
-        // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("Aim Up", ["Control", "1"], () => {this.aim_up = true;}, '#6E6460', () => {this.aim_up = false;});
-        this.key_triggered_button("Aim Down", ["Control", "2"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
-        this.key_triggered_button("Shoot", ["Control", "3"], () => {this.shoot = true;}, '#6E6460');
         
+        if (this.shots_left <= 0){
+            this.new_line();
+            this.new_line();
+
+            if(this.balloon_count !== 32)
+                this.control_panel.innerHTML = "Wow, you are terrible at this game. I hate you.";
+            else
+                this.control_panel.innerHTML = "Guess you aren't a terrible person after all. Try again pretty please owo?";
+            
+            this.new_line();
+            this.new_line();
+            this.key_triggered_button("Reset", ["Control", "4"], () => {this.reset_game();}, '#6E6460');
+            // }
+            
+        }
+        
+        else{
+
+            this.control_panel.innerHTML = "";
+            this.new_line();
+
+            this.live_string(box => {
+                box.textContent = "Darts left: " + this.shots_left;
+            });
+
+            this.new_line();
+            this.new_line();
+            this.key_triggered_button("Aim Up", ["Control", "1"], () => {this.aim_up = true;}, '#6E6460', () => {this.aim_up = false;});
+            this.key_triggered_button("Aim Down", ["Control", "2"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
+            this.key_triggered_button("Shoot", ["Control", "3"], () => {this.shoot = true;}, '#6E6460');
+
+        }
     }
 
     draw_balloons(context, program_state, model_transform, balloon_number, balloon_row) {
@@ -206,10 +197,12 @@ export class Bloons extends Scene {
     }
 
     reset_game() {
+        this.shots_left = 5;
+        this.game_over = false;
         this.popped_balloons = [-1];
         this.balloon_count = 0;
-        this.shots_left = 5;
         this.set_balloon_colors()
+        this.make_control_panel()
     }
 
     display(context, program_state) {
@@ -298,8 +291,8 @@ export class Bloons extends Scene {
             let test_time = this.elapsed_shot_time / 100;
 
             // initial velocity values: change if needed
-            let init_velocity_y = 50;
-            let init_velocity_x = 30;
+            let init_velocity_y = 70;
+            let init_velocity_x = 50;
 
             // calculate positions
                 // delta y = v0 * sin(beta) * t - 1/2 (g) t^2
@@ -317,7 +310,7 @@ export class Bloons extends Scene {
             
                         
             // modify dart angle as it travels and gradually decrease as time goes on
-            radian_angle -= (this.elapsed_shot_time^2)/145;
+            radian_angle -= (this.elapsed_shot_time^2)/200;
             this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(0, 0, 3))
                                                                 .times(Mat4.rotation(radian_angle, 50, 0, 0))
                                                                 .times(Mat4.translation(0, 0, -3))
@@ -369,11 +362,10 @@ export class Bloons extends Scene {
         }
 
         // ran out of shots, reset the game
-        // if (this.shots_left === 0) {
-        //     this.reset_game();
-        // }
-
-        if(!this.shoot)
+        if (this.shots_left === 0) 
+            this.make_control_panel()
+        
+        if(!this.shoot && this.shots_left !== 0)
             this.shapes.dart.draw(context, program_state, this.model_transform_dart_dynamic, this.materials.dart);
         
     }
