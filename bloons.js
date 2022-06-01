@@ -79,10 +79,10 @@ export class Bloons extends Scene {
     }
 
     // randomize balloon colors after each game ends
-    // set_balloon_colors() {
+    set_balloon_colors() {
         
-    //     this.balloon_colors = [...Array(24)].map((_, i) => (color(Math.random(), Math.random(), Math.random(), 1.0)));
-    // }
+        this.balloon_colors = [...Array(24)].map((_, i) => (color(Math.random(), Math.random(), Math.random(), 1.0)));
+    }
 
     make_control_panel() {
 
@@ -112,15 +112,15 @@ export class Bloons extends Scene {
     find_popped_balloons(x_pos, y_pos) {
         let horiz_balloon = -1;
         if (x_pos < -36 && x_pos >= -41) { horiz_balloon = 1;}
-        else if (x_pos < -41 && x_pos >= -46) { horiz_balloon = 2;}
-        else if (x_pos < -46 && x_pos >= -51) { horiz_balloon = 3;}
-        else if (x_pos < -51 && x_pos >= -56) { horiz_balloon = 4;}
-        else if (x_pos < -56 && x_pos >= -61) { horiz_balloon = 5;}
-        else if (x_pos < -61 && x_pos >= -66) { horiz_balloon = 6;}
+        else if (x_pos < -42 && x_pos >= -47) { horiz_balloon = 2;}
+        else if (x_pos < -47 && x_pos >= -52) { horiz_balloon = 3;}
+        else if (x_pos < -52 && x_pos >= -57) { horiz_balloon = 4;}
+        else if (x_pos < -57 && x_pos >= -62) { horiz_balloon = 5;}
+        else if (x_pos < -62 && x_pos >= -69) { horiz_balloon = 6;}
 
         let pop_ball;
         // first row
-        if (y_pos < 10 && y_pos > 4) {
+        if (y_pos <= 16 && y_pos > 9.5) {
             switch (horiz_balloon) {
                 case 1: pop_ball = 0; break;
                 case 2: pop_ball = 1; break;
@@ -132,7 +132,7 @@ export class Bloons extends Scene {
             }
         }
         // second row
-        else if (y_pos < 17 && y_pos > 11) {
+        else if (y_pos <= 23 && y_pos > 16.5) {
             switch (horiz_balloon) {
                 case 1: pop_ball = 6; break;
                 case 2: pop_ball = 7; break;
@@ -144,7 +144,7 @@ export class Bloons extends Scene {
             }
         }
         // third row
-        else if (y_pos < 24 && y_pos > 18) {
+        else if (y_pos <= 30 && y_pos > 23.5) {
             switch (horiz_balloon) {
                 case 1: pop_ball = 12; break;
                 case 2: pop_ball = 13; break;
@@ -156,7 +156,7 @@ export class Bloons extends Scene {
             }
         }
         // fourth row
-        else if (y_pos < 31 && y_pos > 25) {
+        else if (y_pos <= 37 && y_pos > 30.5) {
             switch (horiz_balloon) {
                 case 1: pop_ball = 18; break;
                 case 2: pop_ball = 19; break;
@@ -169,6 +169,13 @@ export class Bloons extends Scene {
         }
 
         return pop_ball;
+    }
+
+    reset_game() {
+        this.popped_balloons = [-1];
+        this.balloon_count = 0;
+        this.shots_left = 5;
+        this.set_balloon_colors()
     }
 
     display(context, program_state) {
@@ -197,6 +204,7 @@ export class Bloons extends Scene {
         // balloons
         let model_transform_balloon = model_transform.times(Mat4.scale(0.5, 0.5, 0.5));
         // this.shapes.balloon.draw(context, program_state, model_transform_balloon, this.materials.balloon)
+        model_transform_balloon = model_transform_balloon.times(Mat4.translation(0, 5, 0));
 
         for (let j = 0; j < 4; j++) {
             for (let i = 0; i < 6; i++) {
@@ -240,6 +248,7 @@ export class Bloons extends Scene {
                                                                     .times(Mat4.translation(0, 0, -3));
         }
 
+
         // shoot dart
         if(this.shoot){
             
@@ -251,7 +260,7 @@ export class Bloons extends Scene {
             let radian_angle = (this.dart_angle * Math.PI/180);
 
             // acceleration value: change if needed
-            let acceleration = 11;
+            let acceleration = 28;
             let test_time = this.elapsed_shot_time / 100;
 
             // initial velocity values: change if needed
@@ -271,9 +280,10 @@ export class Bloons extends Scene {
                                                                 .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
                                                                 .times(Mat4.scale(0.5, 0.5, 0.5))
                                                                 .times(Mat4.translation(0, y_pos, x_pos));
+            
                         
             // modify dart angle as it travels and gradually decrease as time goes on
-            radian_angle -= (this.elapsed_shot_time^2)/400;
+            radian_angle -= (this.elapsed_shot_time^2)/145;
             this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(0, 0, 3))
                                                                 .times(Mat4.rotation(radian_angle, 50, 0, 0))
                                                                 .times(Mat4.translation(0, 0, -3))
@@ -310,17 +320,23 @@ export class Bloons extends Scene {
             
             // reset model
             this.model_transform_dart = Mat4.identity();
-        }
 
+        }
 
         // reset dart after 3s
         if(this.elapsed_shot_time > 300){
             this.shoot = false;
             this.elapsed_shot_time = 0;
             this.shots_left -= 1;
+            // console.log(this.shots_left);
             this.dart_angle = 0;
             // reset dart back to default location
             this.model_transform_dart_dynamic = this.model_transform_dart_default;
+        }
+
+        // ran out of shots, reset the game
+        if (this.shots_left === 0) {
+            this.reset_game();
         }
 
         if(!this.shoot)
