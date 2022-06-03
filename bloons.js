@@ -17,7 +17,8 @@ export class Bloons extends Scene {
             cube: new defs.Cube(),
             balloon: new Shape_From_File("assets/balloon.obj"),
             monkey: new Shape_From_File("assets/monkey.obj"),
-            dart: new Shape_From_File("assets/dart.obj")
+            dart: new Shape_From_File("assets/dart.obj"),
+            pop: new Shape_From_File("assets/burst.obj")
         };
 
         // *** Materials
@@ -35,12 +36,16 @@ export class Bloons extends Scene {
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#bb946a")}),
             platform: new Material(new defs.Phong_Shader(),
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#4f2921")}),
+            
 
             cloud: new Material(new Texture_Scroll_X(), {
                 color: hex_color("#aaaaaa"),
                 ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
                 texture: new Texture("assets/cloud256.PNG", "NEAREST")
                 }),
+            
+            pop: new Material(new defs.Phong_Shader(),
+                {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#4f2921")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -87,10 +92,83 @@ export class Bloons extends Scene {
 
         this.controls_html = document.getElementById('controls');
         this.darts_left_html = document.getElementById('darts-left');
+        
 
+        // pop variables
 
+        this.store_x = [];
+        this.store_y = [];    
+        this.store_balloon_num = [];
+        this.store_time = [];
+        this.popped_display_count = 0;
+        
+
+}
+        
+
+    // initialize popped object
+
+    init_popped_display (x_pos, y_pos, balloon_num) {
+            this.store_x[this.popped_display_count] = x_pos;
+            this.store_y[this.popped_display_count] = y_pos;
+            this.store_balloon_num[this.popped_display_count] = balloon_num;
+            this.store_time[this.popped_display_count] = 0;
+            this.popped_display_count++;
     }
+        
+    // display popped object temporarily
 
+    display_popped (context, program_state, dt) {
+            
+        for (let i = 0; i < this.popped_display_count; i++)
+        {
+            let horiz_balloon = 0;
+            let vert_balloon = 0;
+            
+            if (this.store_x[i] < -36 && this.store_x[i] >= -41) { horiz_balloon = -38.5;}
+            else if (this.store_x[i] < -42 && this.store_x[i] >= -47) { horiz_balloon = -44.5;}
+            else if (this.store_x[i] < -47 && this.store_x[i] >= -52) { horiz_balloon = -49.5;}
+            else if (this.store_x[i] < -52 && this.store_x[i] >= -57) { horiz_balloon = -54.5;}
+            else if (this.store_x[i] < -57 && this.store_x[i]  >= -62) { horiz_balloon = -59.5;}
+            else if (this.store_x[i] < -62 && this.store_x[i] >= -69) { horiz_balloon = -64.5;}
+
+            
+            if (this.store_balloon_num[i] <= 5)
+                vert_balloon = 12.75;
+            else if (this.store_balloon_num[i] <= 11)
+                vert_balloon = 19.75;
+            else if (this.store_balloon_num[i] <= 17)
+                vert_balloon = 26.75;
+            else if (this.store_balloon_num[i] <= 23)
+                vert_balloon = 33.75;
+            
+                let model_transform = Mat4.identity();
+            
+                model_transform = model_transform
+                                                                .times(Mat4.translation(-18,-2,0))
+                                                                .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
+                                                                .times(Mat4.scale(1, 0.5, 0.5))
+                                                                .times(Mat4.translation(0, vert_balloon, horiz_balloon - 1))
+                                                                
+                                                                
+                                                            ;
+            
+
+                
+                
+                this.shapes.pop.draw(context, program_state, model_transform, this.materials.pop.override({color: this.balloon_colors[this.store_balloon_num[i]]}))
+
+                // remove from array if time > 30
+                this.store_time[i] += dt * 100;
+            
+                if (this.store_time[i] >= 30)
+                {
+                        this.popped_display_count--;
+
+                }
+        }
+    }
+        
     // randomize balloon colors after each game ends
     set_balloon_colors() {
         this.balloon_colors = [...Array(24)].map((_, i) => (color(Math.random(), Math.random(), Math.random(), 1.0)));
@@ -237,7 +315,9 @@ export class Bloons extends Scene {
         this.controls_html.innerHTML = '(W) Aim Up, (S) Aim Down, (Space) Shoot, (H) Hard Mode, (E) Button of shame'
         this.shoot = false;
         this.sound_played = false;
+        this.popped_display_count = 0;
     }
+
 
     display(context, program_state) {
 
@@ -412,6 +492,8 @@ export class Bloons extends Scene {
                     // sound effect
                     var snd = new Audio("pop.mp3"); 
                     snd.play();
+
+                    this.init_popped_display(x_pos, y_pos, pop_balloon);
                     
                     this.popped_balloons[this.balloon_count] = pop_balloon;
                     this.balloon_count++;
@@ -420,7 +502,9 @@ export class Bloons extends Scene {
                     // console.log("Popped: " + this.popped_balloons[this.balloon_count]);
                 }
             }
-
+            
+            this.display_popped(context, program_state, dt);
+                
             /* Console information:
              console.log("Y pos: " + y_pos);
              console.log("Radian value: " + Math.sin(radian_angle));
