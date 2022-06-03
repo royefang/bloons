@@ -72,7 +72,7 @@ export class Bloons extends Scene {
         this.elapsed_shot_time = 0;
 
         // remaining shots if we want to implement limited shots later on
-        this.shots_left = 1;
+        this.shots_left = 5;
 
         // balloons that have been popped
         this.popped_balloons = [];
@@ -93,7 +93,7 @@ export class Bloons extends Scene {
             this.new_line();
             this.new_line();
 
-            if(this.balloon_count !== 32){
+            if(this.balloon_count !== 24){
                 this.new_line()
                 this.control_panel.innerHTML = `You popped ${this.balloon_count} balloons.`;
                 this.new_line();
@@ -154,7 +154,7 @@ export class Bloons extends Scene {
         else if (x_pos < -57 && x_pos >= -62) { horiz_balloon = 5;}
         else if (x_pos < -62 && x_pos >= -69) { horiz_balloon = 6;}
 
-        let pop_ball;
+        let pop_ball = -1;
         // first row
         if (y_pos <= 16 && y_pos > 9.5) {
             switch (horiz_balloon) {
@@ -214,6 +214,7 @@ export class Bloons extends Scene {
         this.balloon_count = 0;
         this.set_balloon_colors()
         this.make_control_panel()
+        this.shoot = false;
     }
 
     display(context, program_state) {
@@ -228,7 +229,9 @@ export class Bloons extends Scene {
         // still need to adjust angle of camera in addition to below transformation
         if(this.hard_mode){
             // this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
-            program_state.set_camera(Mat4.translation(6, -2, -40));
+            let hard_mode_camera = Mat4.look_at(vec3(-20, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0))
+            hard_mode_camera = hard_mode_camera.times(Mat4.translation(15, -10, -15));
+            program_state.set_camera(hard_mode_camera);
         }
         else
             program_state.set_camera(Mat4.translation(0, -5, -40));
@@ -276,7 +279,7 @@ export class Bloons extends Scene {
         this.shapes.cube.draw(context, program_state, model_transform_platform, this.materials.platform);
         
         // limit the dart to 90 degrees
-        if(this.aim_up && this.dart_angle < 90 && !this.shoot){
+        if(this.aim_up && this.dart_angle < 90 && !this.shoot && this.shots_left !== 0){
 
             // 180 makes dart_angle consistent with unit circle angles
             this.dart_angle += dt*180;
@@ -287,7 +290,7 @@ export class Bloons extends Scene {
         }
         
         // limit dart above horizontal
-        if(this.aim_down && this.dart_angle > 0 && !this.shoot){
+        if(this.aim_down && this.dart_angle > 0 && !this.shoot && this.shots_left !== 0){
             
             this.dart_angle -= dt*180;
             // console.log(this.dart_angle);
@@ -301,7 +304,7 @@ export class Bloons extends Scene {
             this.shapes.dart.draw(context, program_state, this.model_transform_dart_previous, this.materials.dart_previous);
 
         // shoot dart
-        if(this.shoot){
+        if(this.shoot && this.shots_left !== 0){
             
             // record time since dart was shot
             this.elapsed_shot_time += dt*100;
@@ -311,7 +314,7 @@ export class Bloons extends Scene {
             let radian_angle = (this.dart_angle * Math.PI/180);
 
             // acceleration value: change if needed
-            let acceleration = 28;
+            let acceleration = 40;
             let test_time = this.elapsed_shot_time / 100;
 
             // initial velocity values: change if needed
@@ -336,7 +339,7 @@ export class Bloons extends Scene {
             
                         
             // modify dart angle as it travels and gradually decrease as time goes on
-            radian_angle -= (this.elapsed_shot_time^2)/200;
+            radian_angle -= (this.elapsed_shot_time^2)/150;
             this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(0, 0, 3))
                                                                 .times(Mat4.rotation(radian_angle, 50, 0, 0))
                                                                 .times(Mat4.translation(0, 0, -3))
@@ -357,6 +360,7 @@ export class Bloons extends Scene {
                 if (!balloon_counted) {
                     this.popped_balloons[this.balloon_count] = pop_balloon;
                     this.balloon_count++;
+                    // console.log("popped" + pop_balloon);
                     // console.log("count " + this.balloon_count);
                     // console.log("Popped: " + this.popped_balloons[this.balloon_count]);
                 }
@@ -374,7 +378,6 @@ export class Bloons extends Scene {
             this.model_transform_dart = Mat4.identity();
 
         }
-
 
 
         // reset dart after 3s
