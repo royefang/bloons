@@ -214,7 +214,7 @@ export class Bloons extends Scene {
                                                         Wow, you are terrible at this game. I hate you.`;
                 // sound effect - loss
                 if(!this.sound_played) {
-                    var snd = new Audio("loss.mp3"); 
+                    var snd = new Audio("assets/loss.mp3"); 
                     snd.volume = 0.2;
                     snd.play();
                     this.sound_played = true;
@@ -227,7 +227,7 @@ export class Bloons extends Scene {
                 // sound effect - win
                 if(!this.sound_played)
                 {
-                    var snd = new Audio("win.mp3"); 
+                    var snd = new Audio("assets/win.mp3"); 
                     snd.volume = 0.2;
                     snd.play();
                     this.sound_played = true;
@@ -385,7 +385,7 @@ export class Bloons extends Scene {
                 }
                 if (!balloon_counted) {
                     // sound effect
-                    var snd = new Audio("pop.mp3"); 
+                    var snd = new Audio("assets/pop.mp3"); 
                     snd.volume = 0.2;
                     snd.play();
                     
