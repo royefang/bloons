@@ -47,10 +47,10 @@ const Canvas_Widget = widgets.Canvas_Widget =
                 this.embedded_controls_area.className = "controls-widget";
             }
 
-            if (this.make_code_nav) {
-                this.embedded_code_nav_area = this.element.appendChild(document.createElement("div"));
-                this.embedded_code_nav_area.className = "code-widget";
-            }
+            // if (this.make_code_nav) {
+            //     this.embedded_code_nav_area = this.element.appendChild(document.createElement("div"));
+            //     this.embedded_code_nav_area.className = "code-widget";
+            // }
 
             if (this.make_editor) {
                 this.embedded_editor_area = this.element.appendChild(document.createElement("div"));

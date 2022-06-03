@@ -93,14 +93,21 @@ export class Bloons extends Scene {
             this.new_line();
             this.new_line();
 
-            if(this.balloon_count !== 32)
-                this.control_panel.innerHTML = "Wow, you are terrible at this game. I hate you.";
-            else
-                this.control_panel.innerHTML = "Guess you aren't a terrible person after all. Try again pretty please owo?";
-            
+            if(this.balloon_count !== 32){
+                this.new_line()
+                this.control_panel.innerHTML = `You popped ${this.balloon_count} balloons.`;
+                this.new_line();
+                this.control_panel.innerHTML += "Wow, you are terrible at this game. I hate you.";
+            }
+            else{
+                this.control_panel.innerHTML = "You popped all the balloons!";
+                this.new_line();
+                this.control_panel.innerHTML += "Guess you aren't a terrible person after all. Try again pretty please owo?";
+            }
+
             this.new_line();
             this.new_line();
-            this.key_triggered_button("Reset", ["Control", "5"], () => {this.reset_game();}, '#6E6460');
+            this.key_triggered_button("Reset", ["r"], () => {this.reset_game();}, '#6E6460');
             // }
             
         }
@@ -116,10 +123,10 @@ export class Bloons extends Scene {
 
             this.new_line();
             this.new_line();
-            this.key_triggered_button("Aim Up", ["Control", "1"], () => {this.aim_up = true;}, '#6E6460', () => {this.aim_up = false;});
-            this.key_triggered_button("Aim Down", ["Control", "2"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
-            this.key_triggered_button("Shoot", ["Control", "3"], () => {this.shoot = true;}, '#6E6460');
-            this.key_triggered_button("Hard mode", ["Control", "4"], () => {this.hard_mode = !(this.hard_mode);}, '#6E6460');
+            this.key_triggered_button("Aim Up", ["w"], () => {this.aim_up = true;}, '#6E6460', () => {this.aim_up = false;});
+            this.key_triggered_button("Aim Down", ["s"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
+            this.key_triggered_button("Shoot", [" "], () => {this.shoot = true;}, '#6E6460');
+            this.key_triggered_button("Hard mode", ["h"], () => {this.hard_mode = !(this.hard_mode);}, '#6E6460');
         }
     }
 
@@ -219,8 +226,10 @@ export class Bloons extends Scene {
         }
 
         // still need to adjust angle of camera in addition to below transformation
-        if(this.hard_mode)
+        if(this.hard_mode){
+            // this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             program_state.set_camera(Mat4.translation(6, -2, -40));
+        }
         else
             program_state.set_camera(Mat4.translation(0, -5, -40));
 
@@ -332,8 +341,7 @@ export class Bloons extends Scene {
                                                                 .times(Mat4.rotation(radian_angle, 50, 0, 0))
                                                                 .times(Mat4.translation(0, 0, -3))
 
-            if(!this.hard_mode)
-                this.shapes.dart.draw(context, program_state, this.model_transform_dart, this.materials.dart);
+            this.shapes.dart.draw(context, program_state, this.model_transform_dart, this.materials.dart);
             
             // add balloons that are popped
             let pop_balloon = this.find_popped_balloons(x_pos, y_pos);
