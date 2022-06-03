@@ -14,10 +14,11 @@ Python 3
 python server.py
 ```
 
-Open at localhost:8000
+Open at `localhost:8000`
 
 ## Screenshots
 ![start](./assets/start.PNG) | ![lose](./assets/lose.PNG)
+|:---:|:---:|
 
 ## Demo Slides
 https://docs.google.com/presentation/d/1o1rvjSWi1MRmZt4RjmWhOH02mNUj8UDKdSb9lgkrh-g/edit?usp=sharing
