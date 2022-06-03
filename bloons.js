@@ -102,6 +102,8 @@ export class Bloons extends Scene {
         this.store_balloon_num = [];
         this.store_time = [];
         this.popped_display_count = 0;
+
+        this.game_over = false;
     }
 
     // initialize popped object
@@ -173,7 +175,7 @@ export class Bloons extends Scene {
             this.key_triggered_button("Aim Down", ["s"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
             this.key_triggered_button("Shoot", [" "], () => {this.shoot = true;}, '#6E6460');
             this.key_triggered_button("Hard mode", ["h"], () => {this.hard_mode = !(this.hard_mode);}, '#6E6460');
-            this.key_triggered_button("Key of shame", ["e"], () => {this.shots_left++; this.shame_darts++;}, '#6E6460');
+            this.key_triggered_button("Key of shame", ["e"], () => {if (this.game_over == false) {this.shots_left++; this.shame_darts++;}}, '#6E6460');
         }
     }
 
@@ -369,7 +371,7 @@ export class Bloons extends Scene {
         this.shapes.cube.draw(context, program_state, model_transform_platform, this.materials.platform);
         
         // limit the dart to 90 degrees
-        if(this.aim_up && this.dart_angle < 90 && !this.shoot && this.shots_left !== 0){
+        if(this.aim_up && this.dart_angle < 90 && !this.shoot && this.shots_left !== 0 && this.game_over == false){
 
             // 180 makes dart_angle consistent with unit circle angles
             this.dart_angle += dt*180;
@@ -380,7 +382,7 @@ export class Bloons extends Scene {
         }
         
         // limit dart above horizontal
-        if(this.aim_down && this.dart_angle > 0 && !this.shoot && this.shots_left !== 0){
+        if(this.aim_down && this.dart_angle > 0 && !this.shoot && this.shots_left !== 0 && this.game_over == false){
             
             this.dart_angle -= dt*180;
             // console.log(this.dart_angle);
@@ -394,7 +396,7 @@ export class Bloons extends Scene {
             this.shapes.dart.draw(context, program_state, this.model_transform_dart_previous, this.materials.dart_previous);
 
         // shoot dart
-        if(this.shoot && this.shots_left !== 0){
+        if(this.shoot && this.shots_left !== 0 && this.game_over == false){
             
             // record time since dart was shot
             this.elapsed_shot_time += dt*100;
@@ -490,7 +492,7 @@ export class Bloons extends Scene {
         // ran out of shots
         // console.log(this.balloon_count)
         if (this.shots_left === 0 || this.balloon_count === 24) {
-
+            this.game_over = true;
             this.make_control_panel()
             this.model_transform_dart_previous = model_transform.times(Mat4.translation(-200,-200,-200));
         }
