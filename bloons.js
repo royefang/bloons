@@ -80,6 +80,8 @@ export class Bloons extends Scene {
         this.popped_balloons[0] = -1;
 
         this.hard_mode = false;
+
+        this.sound_played = false;
     }
 
     // randomize balloon colors after each game ends
@@ -98,11 +100,27 @@ export class Bloons extends Scene {
                 this.control_panel.innerHTML = `You popped ${this.balloon_count} balloons.`;
                 this.new_line();
                 this.control_panel.innerHTML += "Wow, you are terrible at this game. I hate you.";
+
+                // sound effect - loss
+                if(!this.sound_played)
+                {
+                    var snd = new Audio("loss.mp3"); 
+                    snd.play();
+                    this.sound_played = true;
+                }
             }
             else{
                 this.control_panel.innerHTML = "You popped all the balloons!";
                 this.new_line();
                 this.control_panel.innerHTML += "Guess you aren't a terrible person after all. Try again pretty please owo?";
+
+                // sound effect - win
+                if(!this.sound_played)
+                {
+                    var snd = new Audio("win.mp3"); 
+                    snd.play();
+                    this.sound_played = true;
+                }
             }
 
             this.new_line();
@@ -215,6 +233,7 @@ export class Bloons extends Scene {
         this.set_balloon_colors()
         this.make_control_panel()
         this.shoot = false;
+        this.sound_played = false;
     }
 
     display(context, program_state) {
@@ -358,6 +377,10 @@ export class Bloons extends Scene {
                     }
                 }
                 if (!balloon_counted) {
+                    // sound effect
+                    var snd = new Audio("pop.mp3"); 
+                    snd.play();
+                    
                     this.popped_balloons[this.balloon_count] = pop_balloon;
                     this.balloon_count++;
                     // console.log("popped" + pop_balloon);
