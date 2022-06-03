@@ -14,10 +14,6 @@ export class Bloons extends Scene {
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
-            torus: new defs.Torus(15, 15),
-            torus2: new defs.Torus(3, 15),
-            sphere: new defs.Subdivision_Sphere(4),
-            circle: new defs.Regular_2D_Polygon(1, 15),
             cube: new defs.Cube(),
             balloon: new Shape_From_File("assets/balloon.obj"),
             monkey: new Shape_From_File("assets/monkey.obj"),
@@ -33,6 +29,8 @@ export class Bloons extends Scene {
                 {ambient: 0.8, diffusivity: 0.5, specularity: 0.1, color: hex_color("#000000")}),
             dart: new Material(new defs.Phong_Shader(),
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#444444")}),
+            dart_previous: new Material(new defs.Phong_Shader(),
+                {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: color(255, 0, 0, 0.5)}),
             monkey: new Material(new defs.Phong_Shader(),
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#bb946a")}),
             platform: new Material(new defs.Phong_Shader(),
@@ -53,7 +51,12 @@ export class Bloons extends Scene {
         this.aim_down = false;
         this.shoot = false;
 
-        this.model_transform_dart = this.model_transform_dart_default = Mat4.identity();
+        this.model_transform_dart = 
+        this.model_transform_dart_default = 
+        this.model_transform_dart_previous =
+        Mat4.identity();
+
+        this.model_transform_dart_previous = this.model_transform_dart_previous.times(Mat4.translation(-200,-200,-200))
 
         // added a default dart matrix, so we can easily reset the dart after modifying the dynamic matrix 
         this.model_transform_dart_default 
@@ -75,7 +78,8 @@ export class Bloons extends Scene {
         this.popped_balloons = [];
         this.balloon_count = 0;
         this.popped_balloons[0] = -1;
-        
+
+        this.hard_mode = false;
     }
 
     // randomize balloon colors after each game ends
@@ -96,7 +100,7 @@ export class Bloons extends Scene {
             
             this.new_line();
             this.new_line();
-            this.key_triggered_button("Reset", ["Control", "4"], () => {this.reset_game();}, '#6E6460');
+            this.key_triggered_button("Reset", ["Control", "5"], () => {this.reset_game();}, '#6E6460');
             // }
             
         }
@@ -115,7 +119,7 @@ export class Bloons extends Scene {
             this.key_triggered_button("Aim Up", ["Control", "1"], () => {this.aim_up = true;}, '#6E6460', () => {this.aim_up = false;});
             this.key_triggered_button("Aim Down", ["Control", "2"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
             this.key_triggered_button("Shoot", ["Control", "3"], () => {this.shoot = true;}, '#6E6460');
-
+            this.key_triggered_button("Hard mode", ["Control", "4"], () => {this.hard_mode = !(this.hard_mode);}, '#6E6460');
         }
     }
 
@@ -214,6 +218,13 @@ export class Bloons extends Scene {
             program_state.set_camera(Mat4.translation(0, -5, -40));
         }
 
+        // still need to adjust angle of camera in addition to below transformation
+        if(this.hard_mode)
+            program_state.set_camera(Mat4.translation(6, -2, -40));
+        else
+            program_state.set_camera(Mat4.translation(0, -5, -40));
+
+
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
@@ -223,6 +234,7 @@ export class Bloons extends Scene {
 
         const t = this.t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         let model_transform = Mat4.identity();
+        // let model_transform_previous_dart = Mat4.identity();
 
         // background
         let model_transform_cloud = model_transform.times(Mat4.scale(100, 100, 75));
@@ -274,7 +286,10 @@ export class Bloons extends Scene {
                                                                     .times(Mat4.rotation(Math.PI*dt, -1, 0, 0))
                                                                     .times(Mat4.translation(0, 0, -3));
         }
-
+        
+        // draw prev dart (prev dart recorded after 3s reset)
+        if(!this.hard_mode)
+            this.shapes.dart.draw(context, program_state, this.model_transform_dart_previous, this.materials.dart_previous);
 
         // shoot dart
         if(this.shoot){
@@ -302,6 +317,8 @@ export class Bloons extends Scene {
             let x_pos = -(init_velocity_x * test_time);
             // console.log(x_pos);
 
+
+
             // statically (not dynamically)compute where position of dart should be
             this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(-18,-2,0))
                                                                 .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
@@ -315,9 +332,9 @@ export class Bloons extends Scene {
                                                                 .times(Mat4.rotation(radian_angle, 50, 0, 0))
                                                                 .times(Mat4.translation(0, 0, -3))
 
-
-            this.shapes.dart.draw(context, program_state, this.model_transform_dart, this.materials.dart);
-
+            if(!this.hard_mode)
+                this.shapes.dart.draw(context, program_state, this.model_transform_dart, this.materials.dart);
+            
             // add balloons that are popped
             let pop_balloon = this.find_popped_balloons(x_pos, y_pos);
 
@@ -350,6 +367,8 @@ export class Bloons extends Scene {
 
         }
 
+
+
         // reset dart after 3s
         if(this.elapsed_shot_time > 300){
             this.shoot = false;
@@ -357,16 +376,26 @@ export class Bloons extends Scene {
             this.shots_left -= 1;
             // console.log(this.shots_left);
             this.dart_angle = 0;
+            // prev dart
+            this.model_transform_dart_previous = this.model_transform_dart_dynamic;
             // reset dart back to default location
             this.model_transform_dart_dynamic = this.model_transform_dart_default;
+            
         }
 
         // ran out of shots, reset the game
-        if (this.shots_left === 0) 
+        if (this.shots_left === 0) {
             this.make_control_panel()
+            this.model_transform_dart_previous = model_transform.times(Mat4.translation(-200,-200,-200))
+        }
         
-        if(!this.shoot && this.shots_left !== 0)
+
+        if(this.shots_left !== 0 && !this.shoot){
             this.shapes.dart.draw(context, program_state, this.model_transform_dart_dynamic, this.materials.dart);
+        }
+
+
+
         
     }
 }
