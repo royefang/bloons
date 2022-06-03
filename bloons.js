@@ -149,21 +149,16 @@ export class Bloons extends Scene {
                 model_transform = model_transform
                                                                 .times(Mat4.translation(-18,-2,0))
                                                                 .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
-                                                                .times(Mat4.scale(1, 0.5, 0.5))
-                                                                .times(Mat4.translation(0, vert_balloon, horiz_balloon - 1))
-                                                                
-                                                                
+                                                                .times(Mat4.scale(1.5, 0.5, 0.5))
+                                                                .times(Mat4.translation(0, vert_balloon, horiz_balloon - 1))                          
                                                             ;
             
-
-                
-                
                 this.shapes.pop.draw(context, program_state, model_transform, this.materials.pop.override({color: this.balloon_colors[this.store_balloon_num[i]]}))
 
-                // remove from array if time > 30
+                // remove from array if time > 20, change if needed for pop to expire faster
                 this.store_time[i] += dt * 100;
             
-                if (this.store_time[i] >= 30)
+                if (this.store_time[i] >= 20)
                 {
                         this.popped_display_count--;
 
