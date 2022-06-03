@@ -22,9 +22,7 @@ export class Bloons extends Scene {
 
         // *** Materials
         this.materials = {
-            test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
-            
+
             balloon: new Material(new defs.Phong_Shader(),
                 {ambient: 0.8, diffusivity: 0.5, specularity: 0.1, color: hex_color("#000000")}),
             dart: new Material(new defs.Phong_Shader(),
@@ -35,7 +33,6 @@ export class Bloons extends Scene {
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#bb946a")}),
             platform: new Material(new defs.Phong_Shader(),
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#4f2921")}),
-
             cloud: new Material(new Texture_Scroll_X(), {
                 color: hex_color("#aaaaaa"),
                 ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
@@ -72,22 +69,25 @@ export class Bloons extends Scene {
         this.elapsed_shot_time = 0;
 
         // remaining shots if we want to implement limited shots later on
-        this.shots_left = 1 ;
+        this.shots_left = 5;
 
         // balloons that have been popped
         this.popped_balloons = [];
         this.balloon_count = 0;
         this.popped_balloons[0] = -1;
 
+        // trigger hard mode
         this.hard_mode = false;
 
+        // play sound
         this.sound_played = false;
 
+        // add extra darts
         this.shame_darts = 0;
 
+        // modify on screen text
         this.controls_html = document.getElementById('controls');
         this.darts_left_html = document.getElementById('darts-left');
-
 
     }
 
@@ -98,55 +98,16 @@ export class Bloons extends Scene {
 
     make_control_panel() {
         
-        if (this.shots_left <= 0){
-            this.new_line();
-            this.new_line();
-
-            if(this.balloon_count !== 24){
-         
-                // sound effect - loss
-                if(!this.sound_played)
-                {
-                    var snd = new Audio("loss.mp3"); 
-                    snd.play();
-                    this.sound_played = true;
-                }
-            }
-            else{
-                // sound effect - win
-                if(!this.sound_played)
-                {
-                    var snd = new Audio("win.mp3"); 
-                    snd.play();
-                    this.sound_played = true;
-                }
-            }
-
-            this.new_line();
-            this.new_line();
+        if (this.shots_left <= 0 || this.balloon_count === 24){
             this.key_triggered_button("Reset", ["r"], () => {this.reset_game();}, '#6E6460');
-            // this.controls_html.innerHTML = '(R) Reset'
-            // }
-            
         }
         
         else{
-
-            this.control_panel.innerHTML = "";
-            this.new_line();
-
-            this.live_string(box => {
-                box.textContent = "Darts left: " + this.shots_left;
-            });
-
-            this.new_line();
-            this.new_line();
             this.key_triggered_button("Aim Up", ["w"], () => {this.aim_up = true;}, '#6E6460', () => {this.aim_up = false;});
             this.key_triggered_button("Aim Down", ["s"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
             this.key_triggered_button("Shoot", [" "], () => {this.shoot = true;}, '#6E6460');
             this.key_triggered_button("Hard mode", ["h"], () => {this.hard_mode = !(this.hard_mode);}, '#6E6460');
             this.key_triggered_button("Key of shame", ["e"], () => {this.shots_left++; this.shame_darts++;}, '#6E6460');
-
         }
     }
 
@@ -247,16 +208,30 @@ export class Bloons extends Scene {
             this.controls_html.innerHTML = '(R) Reset'
     
             if(this.balloon_count !== 24){
-                console.log('heeeeeere')
                 // this.darts_left_html.innerHTML = '';
                 this.darts_left_html.innerHTML = `You only popped ${this.balloon_count} balloons and 
                                                         used ${this.shame_darts} darts of shame. 
                                                         Wow, you are terrible at this game. I hate you.`;
+                // sound effect - loss
+                if(!this.sound_played) {
+                    var snd = new Audio("loss.mp3"); 
+                    snd.volume = 0.2;
+                    snd.play();
+                    this.sound_played = true;
+                }
             }
             else{
                 // this.darts_left_html.innerHTML = '';
                 this.darts_left_html.innerHTML = `You popped all the balloons and only used ${this.shame_darts} extra darts!
                                                  Guess you aren't a terrible person after all. Try again pretty please owo?`;
+                // sound effect - win
+                if(!this.sound_played)
+                {
+                    var snd = new Audio("win.mp3"); 
+                    snd.volume = 0.2;
+                    snd.play();
+                    this.sound_played = true;
+                }
             }
         }
 
@@ -280,8 +255,8 @@ export class Bloons extends Scene {
         // still need to adjust angle of camera in addition to below transformation
         if(this.hard_mode){
             // this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
-            let hard_mode_camera = Mat4.look_at(vec3(-20, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0))
-            hard_mode_camera = hard_mode_camera.times(Mat4.translation(15, -10, -15));
+            let hard_mode_camera = Mat4.look_at(vec3(-20, 0, 20), vec3(0, 0, 0), vec3(0, 1, 0))
+            hard_mode_camera = hard_mode_camera.times(Mat4.translation(20, -5, -15));
             program_state.set_camera(hard_mode_camera);
         }
         else
@@ -390,7 +365,7 @@ export class Bloons extends Scene {
             
                         
             // modify dart angle as it travels and gradually decrease as time goes on
-            radian_angle -= (this.elapsed_shot_time^2)/150;
+            radian_angle -= (this.elapsed_shot_time^2)/175;
             this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(0, 0, 3))
                                                                 .times(Mat4.rotation(radian_angle, 50, 0, 0))
                                                                 .times(Mat4.translation(0, 0, -3))
@@ -411,6 +386,7 @@ export class Bloons extends Scene {
                 if (!balloon_counted) {
                     // sound effect
                     var snd = new Audio("pop.mp3"); 
+                    snd.volume = 0.2;
                     snd.play();
                     
                     this.popped_balloons[this.balloon_count] = pop_balloon;
@@ -453,11 +429,11 @@ export class Bloons extends Scene {
         // console.log(this.balloon_count)
         if (this.shots_left === 0 || this.balloon_count === 24) {
             this.make_control_panel()
-            this.model_transform_dart_previous = model_transform.times(Mat4.translation(-200,-200,-200))
+            this.model_transform_dart_previous = model_transform.times(Mat4.translation(-200,-200,-200));
         }
         
 
-        if(this.shots_left !== 0 && !this.shoot){
+        if((this.shots_left !== 0 || this.balloon_count ===24) && !this.shoot){
             this.shapes.dart.draw(context, program_state, this.model_transform_dart_dynamic, this.materials.dart);
         }
 
