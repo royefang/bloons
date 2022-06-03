@@ -34,39 +34,40 @@ export class Bloons extends Scene {
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#bb946a")}),
             platform: new Material(new defs.Phong_Shader(),
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#4f2921")}),
-            
-
-            cloud: new Material(new Texture_Scroll_X(), {
-                color: hex_color("#aaaaaa"),
-                ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
-                texture: new Texture("assets/cloud256.PNG", "NEAREST")
-                }),
-            
             pop: new Material(new defs.Phong_Shader(),
                 {ambient: 0.5, diffusivity: 0.5, specularity: 0.5, color: hex_color("#4f2921")}),
+            cloud: new Material(new Texture_Scroll_X(), 
+                {ambient: 0.5, diffusivity: 0.1, specularity: 0.1, color: hex_color("#aaaaaa"),
+                texture: new Texture("assets/cloud256.PNG", "NEAREST")}),
         }
 
+        // init
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
+        // random balloon colors
         this.balloon_colors = [...Array(24)].map((_, i) => (color(Math.random(), Math.random(), Math.random(), 1.0)));
-            
+        
+        // track dart states
         this.aim_up = false;
         this.aim_down = false;
         this.shoot = false;
 
+        // init dart transforms
         this.model_transform_dart = 
         this.model_transform_dart_default = 
         this.model_transform_dart_previous =
         Mat4.identity();
 
+        // init prev dart to garbage value
         this.model_transform_dart_previous = this.model_transform_dart_previous.times(Mat4.translation(-200,-200,-200))
 
-        // added a default dart matrix, so we can easily reset the dart after modifying the dynamic matrix 
+        // default dart matrix, for reseting the dart after modifying the dynamic matrix 
         this.model_transform_dart_default 
             = this.model_transform_dart_dynamic 
             = this.model_transform_dart_default.times(Mat4.translation(-18,-2,0))
                                                             .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
                                                             .times(Mat4.scale(0.5, 0.5, 0.5));
+
         // dart angle will go between 0 and 90 degrees
         this.dart_angle = 0;
         
@@ -74,7 +75,7 @@ export class Bloons extends Scene {
         // resets the shot after 3s
         this.elapsed_shot_time = 0;
 
-        // remaining shots if we want to implement limited shots later on
+        // remaining shots
         this.shots_left = 5;
 
         // balloons that have been popped
@@ -93,24 +94,19 @@ export class Bloons extends Scene {
 
         // modify on screen text
         this.controls_html = document.getElementById('controls');
-        this.darts_left_html = document.getElementById('darts-left');
+        this.game_state_html = document.getElementById('game-state');
         
-
         // pop variables
-
         this.store_x = [];
         this.store_y = [];    
         this.store_balloon_num = [];
         this.store_time = [];
         this.popped_display_count = 0;
-        
-
-}
-        
+    }
 
     // initialize popped object
-
     init_popped_display (x_pos, y_pos, balloon_num) {
+
             this.store_x[this.popped_display_count] = x_pos;
             this.store_y[this.popped_display_count] = y_pos;
             this.store_balloon_num[this.popped_display_count] = balloon_num;
@@ -119,7 +115,6 @@ export class Bloons extends Scene {
     }
         
     // display popped object temporarily
-
     display_popped (context, program_state, dt) {
             
         for (let i = 0; i < this.popped_display_count; i++)
@@ -165,12 +160,8 @@ export class Bloons extends Scene {
                 }
         }
     }
-        
-    // randomize balloon colors after each game ends
-    set_balloon_colors() {
-        this.balloon_colors = [...Array(24)].map((_, i) => (color(Math.random(), Math.random(), Math.random(), 1.0)));
-    }
 
+    // controls (hidden from view)
     make_control_panel() {
         
         if (this.shots_left <= 0 || this.balloon_count === 24){
@@ -186,8 +177,8 @@ export class Bloons extends Scene {
         }
     }
 
+    // balloon grid
     draw_balloons(context, program_state, model_transform, balloon_number, balloon_row) {
-
 
         model_transform = model_transform.times(Mat4.translation(5, 0, 0))
         let balloon_num = balloon_number + (balloon_row*6);
@@ -202,6 +193,7 @@ export class Bloons extends Scene {
     }
 
     find_popped_balloons(x_pos, y_pos) {
+
         let horiz_balloon = -1;
         if (x_pos < -36 && x_pos >= -41) { horiz_balloon = 1;}
         else if (x_pos < -42 && x_pos >= -47) { horiz_balloon = 2;}
@@ -264,29 +256,31 @@ export class Bloons extends Scene {
     }
 
     reset_game() {
+        
         this.shots_left = 5;
         this.game_over = false;
         this.popped_balloons = [-1];
         this.balloon_count = 0;
-        this.set_balloon_colors();
         this.make_control_panel();
         this.controls_html.innerHTML = '(W) Aim Up, (S) Aim Down, (Space) Shoot, (H) Hard Mode, (E) Button of shame'
         this.shoot = false;
         this.sound_played = false;
         this.popped_display_count = 0;
     }
-
-
+    
+    
     display(context, program_state) {
+        
+        // display():  Called once per frame of animation.
 
-
+        // update game text
         if(this.shots_left == 0 || this.balloon_count == 24){
 
             this.controls_html.innerHTML = '(R) Reset'
     
             if(this.balloon_count !== 24){
-                // this.darts_left_html.innerHTML = '';
-                this.darts_left_html.innerHTML = `You only popped ${this.balloon_count} balloons and 
+
+                this.game_state_html.innerHTML = `You only popped ${this.balloon_count} balloons and 
                                                         used ${this.shame_darts} darts of shame. 
                                                         Wow, you are terrible at this game. I hate you.`;
                 // sound effect - loss
@@ -298,8 +292,8 @@ export class Bloons extends Scene {
                 }
             }
             else{
-                // this.darts_left_html.innerHTML = '';
-                this.darts_left_html.innerHTML = `You popped all the balloons and only used ${this.shame_darts} extra darts!
+
+                this.game_state_html.innerHTML = `You popped all the balloons and only used ${this.shame_darts} extra darts!
                                                  Guess you aren't a terrible person after all. Try again pretty please owo?`;
                 // sound effect - win
                 if(!this.sound_played)
@@ -313,15 +307,10 @@ export class Bloons extends Scene {
         }
 
         else{
-            this.darts_left_html.innerHTML = `You have ${this.shots_left} darts 
+            this.game_state_html.innerHTML = `You have ${this.shots_left} darts 
                                     & ${24 - this.balloon_count} balloons left.`;
         }
         
-
-
-        
-
-        // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
@@ -339,7 +328,7 @@ export class Bloons extends Scene {
         else
             program_state.set_camera(Mat4.translation(0, -5, -40));
 
-
+        // perspective projection
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
@@ -349,16 +338,14 @@ export class Bloons extends Scene {
 
         const t = this.t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         let model_transform = Mat4.identity();
-        // let model_transform_previous_dart = Mat4.identity();
 
         // background
         let model_transform_cloud = model_transform.times(Mat4.scale(100, 100, 75));
         this.shapes.cube.draw(context, program_state, model_transform_cloud, this.materials.cloud)
 
         // balloons
-        let model_transform_balloon = model_transform.times(Mat4.scale(0.5, 0.5, 0.5));
-        // this.shapes.balloon.draw(context, program_state, model_transform_balloon, this.materials.balloon)
-        model_transform_balloon = model_transform_balloon.times(Mat4.translation(0, 5, 0));
+        let model_transform_balloon = model_transform.times(Mat4.scale(0.5, 0.5, 0.5))
+                                                        .times(Mat4.translation(0, 5, 0));
 
         for (let j = 0; j < 4; j++) {
             for (let i = 0; i < 6; i++) {
@@ -432,14 +419,11 @@ export class Bloons extends Scene {
             let x_pos = -(init_velocity_x * test_time);
             // console.log(x_pos);
 
-
-
             // statically (not dynamically)compute where position of dart should be
             this.model_transform_dart = this.model_transform_dart.times(Mat4.translation(-18,-2,0))
                                                                 .times(Mat4.rotation(-Math.PI/2, 0, 1, 0))
                                                                 .times(Mat4.scale(0.5, 0.5, 0.5))
                                                                 .times(Mat4.translation(0, y_pos, x_pos));
-            
                         
             // modify dart angle as it travels and gradually decrease as time goes on
             radian_angle -= (this.elapsed_shot_time^2)/175;
@@ -488,36 +472,32 @@ export class Bloons extends Scene {
             
             // reset model
             this.model_transform_dart = Mat4.identity();
-
         }
-
 
         // reset dart after 3s
         if(this.elapsed_shot_time > 300){
+
             this.shoot = false;
             this.elapsed_shot_time = 0;
             this.shots_left -= 1;
-            // console.log(this.shots_left);
             this.dart_angle = 0;
             // prev dart
             this.model_transform_dart_previous = this.model_transform_dart_dynamic;
             // reset dart back to default location
             this.model_transform_dart_dynamic = this.model_transform_dart_default;
-            
         }
 
         // ran out of shots
         // console.log(this.balloon_count)
         if (this.shots_left === 0 || this.balloon_count === 24) {
+
             this.make_control_panel()
             this.model_transform_dart_previous = model_transform.times(Mat4.translation(-200,-200,-200));
         }
         
 
-        if((this.shots_left !== 0 || this.balloon_count ===24) && !this.shoot){
+        if((this.shots_left !== 0 || this.balloon_count ===24) && !this.shoot)
             this.shapes.dart.draw(context, program_state, this.model_transform_dart_dynamic, this.materials.dart);
-        }
-
         
     }
 }
@@ -535,16 +515,18 @@ class Texture_Scroll_X extends Textured_Phong {
                 // Sample the texture image in the correct place:
                 vec2 scroll_tex_coord = f_tex_coord;
 
-                // mod to keep value between 0 and 2, prevents coord value from growing excessively
+                // mod prevents coord value from growing excessively
                 scroll_tex_coord.x -= mod(animation_time, 60.0)/20.0;
                 
                 vec4 tex_color = texture2D( texture, scroll_tex_coord);
+
                 if( tex_color.w < .01 ) discard;
-                                                                         // Compute an initial (ambient) color:
+
+                // Compute an initial (ambient) color:
                 gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
-                                                                         // Compute the final color with contributions from lights:
+
+                // Compute the final color with contributions from lights:
                 gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
         } `;
     }
 }
-
