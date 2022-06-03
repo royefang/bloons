@@ -47,10 +47,10 @@ const Canvas_Widget = widgets.Canvas_Widget =
                 this.embedded_controls_area.className = "controls-widget";
             }
 
-            // if (this.make_code_nav) {
-            //     this.embedded_code_nav_area = this.element.appendChild(document.createElement("div"));
-            //     this.embedded_code_nav_area.className = "code-widget";
-            // }
+            if (this.make_code_nav) {
+                this.embedded_code_nav_area = this.element.appendChild(document.createElement("div"));
+                this.embedded_code_nav_area.className = "code-widget";
+            }
 
             if (this.make_editor) {
                 this.embedded_editor_area = this.element.appendChild(document.createElement("div"));
@@ -93,7 +93,7 @@ const Controls_Widget = widgets.Controls_Widget =
         // Scene object, each providing interactive elements such as buttons with key
         // bindings, live readouts of Scene data members, etc.
         constructor(element, scenes) {
-            const rules = [".controls-widget * { font-family: monospace }",
+            const rules = [".controls-widget * { display:none; font-family: monospace }",
                 ".controls-widget div { background: White }",
                 ".controls-widget table { border-collapse: collapse; display:block; overflow-x: auto; table-layout: fixed;}",
                 ".controls-widget table.control-box { width: 1080px; border:1px; margin:0; max-height:380px; " +
@@ -226,7 +226,8 @@ const Code_Widget = widgets.Code_Widget =
         // **Code_Widget** draws a code navigator panel with inline links to the entire program source code.
         constructor(element, main_scene, additional_scenes, options = {}) {
             // TODO: Update color and board here
-            const rules = [".code-widget .code-panel { margin:auto; background:white; overflow:auto; font-family:monospace; \
+            const rules = [".code-widget {display: none}", 
+                ".code-panel { margin:auto; background:white; overflow:auto; font-family:monospace; \
                 width:1058px; padding:10px; padding-bottom:40px; max-height: 500px; \
                 border-radius:10px; border: 1px solid black; }",
                 ".code-widget .code-display { min-width:1200px; padding:10px; white-space:pre-wrap; background:transparent }",

@@ -72,7 +72,7 @@ export class Bloons extends Scene {
         this.elapsed_shot_time = 0;
 
         // remaining shots if we want to implement limited shots later on
-        this.shots_left = 5;
+        this.shots_left = 1 ;
 
         // balloons that have been popped
         this.popped_balloons = [];
@@ -82,6 +82,13 @@ export class Bloons extends Scene {
         this.hard_mode = false;
 
         this.sound_played = false;
+
+        this.shame_darts = 0;
+
+        this.controls_html = document.getElementById('controls');
+        this.darts_left_html = document.getElementById('darts-left');
+
+
     }
 
     // randomize balloon colors after each game ends
@@ -96,11 +103,7 @@ export class Bloons extends Scene {
             this.new_line();
 
             if(this.balloon_count !== 24){
-                this.new_line()
-                this.control_panel.innerHTML = `You popped ${this.balloon_count} balloons.`;
-                this.new_line();
-                this.control_panel.innerHTML += "Wow, you are terrible at this game. I hate you.";
-
+         
                 // sound effect - loss
                 if(!this.sound_played)
                 {
@@ -110,10 +113,6 @@ export class Bloons extends Scene {
                 }
             }
             else{
-                this.control_panel.innerHTML = "You popped all the balloons!";
-                this.new_line();
-                this.control_panel.innerHTML += "Guess you aren't a terrible person after all. Try again pretty please owo?";
-
                 // sound effect - win
                 if(!this.sound_played)
                 {
@@ -126,6 +125,7 @@ export class Bloons extends Scene {
             this.new_line();
             this.new_line();
             this.key_triggered_button("Reset", ["r"], () => {this.reset_game();}, '#6E6460');
+            // this.controls_html.innerHTML = '(R) Reset'
             // }
             
         }
@@ -145,6 +145,8 @@ export class Bloons extends Scene {
             this.key_triggered_button("Aim Down", ["s"], () => {this.aim_down = true;}, '#6E6460', () => {this.aim_down = false;});
             this.key_triggered_button("Shoot", [" "], () => {this.shoot = true;}, '#6E6460');
             this.key_triggered_button("Hard mode", ["h"], () => {this.hard_mode = !(this.hard_mode);}, '#6E6460');
+            this.key_triggered_button("Key of shame", ["e"], () => {this.shots_left++; this.shame_darts++;}, '#6E6460');
+
         }
     }
 
@@ -230,13 +232,43 @@ export class Bloons extends Scene {
         this.game_over = false;
         this.popped_balloons = [-1];
         this.balloon_count = 0;
-        this.set_balloon_colors()
-        this.make_control_panel()
+        this.set_balloon_colors();
+        this.make_control_panel();
+        this.controls_html.innerHTML = '(W) Aim Up, (S) Aim Down, (Space) Shoot, (H) Hard Mode, (E) Button of shame'
         this.shoot = false;
         this.sound_played = false;
     }
 
     display(context, program_state) {
+
+
+        if(this.shots_left == 0 || this.balloon_count == 24){
+
+            this.controls_html.innerHTML = '(R) Reset'
+    
+            if(this.balloon_count !== 24){
+                console.log('heeeeeere')
+                // this.darts_left_html.innerHTML = '';
+                this.darts_left_html.innerHTML = `You only popped ${this.balloon_count} balloons and 
+                                                        used ${this.shame_darts} darts of shame. 
+                                                        Wow, you are terrible at this game. I hate you.`;
+            }
+            else{
+                // this.darts_left_html.innerHTML = '';
+                this.darts_left_html.innerHTML = `You popped all the balloons and only used ${this.shame_darts} extra darts!
+                                                 Guess you aren't a terrible person after all. Try again pretty please owo?`;
+            }
+        }
+
+        else{
+            this.darts_left_html.innerHTML = `You have ${this.shots_left} darts 
+                                    & ${24 - this.balloon_count} balloons left.`;
+        }
+        
+
+
+        
+
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
@@ -417,8 +449,9 @@ export class Bloons extends Scene {
             
         }
 
-        // ran out of shots, reset the game
-        if (this.shots_left === 0) {
+        // ran out of shots
+        // console.log(this.balloon_count)
+        if (this.shots_left === 0 || this.balloon_count === 24) {
             this.make_control_panel()
             this.model_transform_dart_previous = model_transform.times(Mat4.translation(-200,-200,-200))
         }
@@ -427,8 +460,6 @@ export class Bloons extends Scene {
         if(this.shots_left !== 0 && !this.shoot){
             this.shapes.dart.draw(context, program_state, this.model_transform_dart_dynamic, this.materials.dart);
         }
-
-
 
         
     }
