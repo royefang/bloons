@@ -1,5 +1,5 @@
 # Bloons
-[Demo](royefang.github.io/bloons)
+[Demo](https://royefang.github.io/bloons)
 
 ## Setup
 
